@@ -76,7 +76,7 @@ def set_current_download_dir(path_value: str) -> Path:
     if not path_text:
         raise BackendError(
             code="INVALID_FOLDER",
-            message="Ungueltiger Ordnerpfad.",
+            message="Invalid folder path.",
             http_status=400,
         )
 
@@ -85,7 +85,7 @@ def set_current_download_dir(path_value: str) -> Path:
     if not target.exists() or not target.is_dir():
         raise BackendError(
             code="INVALID_FOLDER",
-            message="Der angegebene Pfad ist kein gueltiger Ordner.",
+            message="The selected path is not a valid folder.",
             http_status=400,
         )
 
@@ -102,20 +102,20 @@ def select_download_dir_via_dialog() -> Path:
     except Exception as exc:
         raise BackendError(
             code="FOLDER_DIALOG_UNAVAILABLE",
-            message=f"Ordner-Auswahldialog nicht verfuegbar. ({exc})",
+            message=f"Folder picker is unavailable. ({exc})",
             http_status=500,
         ) from exc
 
     root = tk.Tk()
     root.withdraw()
     root.attributes("-topmost", True)
-    selected = filedialog.askdirectory(title="Download-Ordner waehlen")
+    selected = filedialog.askdirectory(title="Choose download folder")
     root.destroy()
 
     if not selected:
         raise BackendError(
             code="FOLDER_NOT_SELECTED",
-            message="Kein Ordner ausgewaehlt.",
+            message="No folder selected.",
             http_status=400,
         )
 
@@ -168,7 +168,7 @@ def ensure_valid_youtube_url(url: str) -> str:
     if not is_valid_youtube_url(trimmed):
         raise BackendError(
             code="INVALID_URL",
-            message="Ungueltige YouTube-URL. Bitte einen gueltigen Link eingeben.",
+            message="Invalid YouTube URL. Please enter a valid link.",
             http_status=400,
         )
     return trimmed
@@ -387,8 +387,8 @@ def build_timestamp_transcript(entries: list[dict[str, Any]]) -> str:
 
 
 def choose_subtitle_entry(info: dict[str, Any]) -> dict[str, str] | None:
-    candidates: list[tuple[int, int, int, str, str, str]] = []
-    language_order = ("de", "en")
+    candidates: list[tuple[int, int, int, int, str, str, str]] = []
+    language_order = ("de-orig", "de", "en-orig", "en")
     ext_order = ("json3", "vtt")
 
     for source_rank, source_key in enumerate(("subtitles", "automatic_captions")):
@@ -403,17 +403,19 @@ def choose_subtitle_entry(info: dict[str, Any]) -> dict[str, str] | None:
                 lang_rank = len(language_order)
                 normalized_lang = (language or "").lower()
                 for idx, prefix in enumerate(language_order):
-                    if normalized_lang.startswith(prefix):
+                    if normalized_lang == prefix or normalized_lang.startswith(f"{prefix}-"):
                         lang_rank = idx
                         break
 
+                # Prefer original/native subtitle tracks over auto-translated ones.
+                translation_rank = 1 if "tlang=" in str(url) else 0
                 ext_rank = ext_order.index(extension) if extension in ext_order else len(ext_order)
-                candidates.append((source_rank, lang_rank, ext_rank, language, extension, url))
+                candidates.append((translation_rank, source_rank, lang_rank, ext_rank, language, extension, url))
 
     if not candidates:
         return None
 
-    _, _, _, language, extension, url = min(candidates, key=lambda item: (item[0], item[1], item[2]))
+    _, _, _, _, language, extension, url = min(candidates, key=lambda item: (item[0], item[1], item[2], item[3]))
     return {"lang": language, "ext": extension, "url": url}
 
 
@@ -423,7 +425,7 @@ def extract_chapters(info: dict[str, Any]) -> list[dict[str, Any]]:
     for chapter in raw_chapters:
         start_time = _as_float(chapter.get("start_time"))
         end_time = _as_float(chapter.get("end_time"))
-        title = str(chapter.get("title") or "").strip() or "Kapitel"
+        title = str(chapter.get("title") or "").strip() or "Chapter"
         start_seconds = max(0.0, start_time or 0.0)
         chapters.append(
             {
@@ -445,19 +447,19 @@ def map_exception(exc: Exception, *, default_code: str, default_message: str, de
     if "429" in message:
         return BackendError(
             code="YOUTUBE_RATE_LIMIT_429",
-            message="YouTube blockiert die Anfrage (HTTP 429). Bitte spaeter erneut versuchen.",
+            message="YouTube is rate-limiting the request (HTTP 429). Please try again later.",
             http_status=429,
         )
     if "ffmpeg" in lower and ("not installed" in lower or "not found" in lower):
         return BackendError(
             code="FFMPEG_MISSING",
-            message="ffmpeg wurde nicht gefunden. MP3-Download benoetigt ffmpeg.",
+            message="ffmpeg was not found. MP3 downloads require ffmpeg.",
             http_status=400,
         )
     if "unsupported url" in lower or "invalid url" in lower:
         return BackendError(
             code="INVALID_URL",
-            message="Ungueltige YouTube-URL. Bitte einen gueltigen Link eingeben.",
+            message="Invalid YouTube URL. Please enter a valid link.",
             http_status=400,
         )
 
@@ -509,7 +511,7 @@ def fetch_transcript(
                         }
                     raise BackendError(
                         code="NO_SUBTITLES",
-                        message="Keine Untertitel fuer dieses Video gefunden.",
+                        message="No subtitles were found for this video.",
                         http_status=404,
                     )
 
@@ -550,7 +552,7 @@ def fetch_transcript(
                         }
                     raise BackendError(
                         code="TRANSCRIPT_PARSE_FAILED",
-                        message="Transkript konnte nicht aus den Untertiteln gelesen werden.",
+                        message="The transcript could not be parsed from the subtitles.",
                         http_status=422,
                     )
 
@@ -573,7 +575,7 @@ def fetch_transcript(
     if any("429" in err for err in errors):
         raise BackendError(
             code="YOUTUBE_RATE_LIMIT_429",
-            message="YouTube blockiert die Untertitel-Anfrage (HTTP 429). Bitte spaeter erneut versuchen.",
+            message="YouTube is rate-limiting the subtitle request (HTTP 429). Please try again later.",
             http_status=429,
         )
 
@@ -581,13 +583,13 @@ def fetch_transcript(
         detail = errors[-1].splitlines()[0]
         raise BackendError(
             code="DOWNLOAD_FAILED",
-            message=f"Untertitel konnten nicht geladen werden. ({detail})",
+            message=f"Subtitles could not be loaded. ({detail})",
             http_status=502,
         )
 
     raise BackendError(
         code="DOWNLOAD_FAILED",
-        message="Untertitel konnten nicht geladen werden.",
+        message="Subtitles could not be loaded.",
         http_status=502,
     )
 
@@ -600,7 +602,7 @@ def fetch_video_preview(video_url: str, *, include_timestamps: bool = False) -> 
         raise map_exception(
             exc,
             default_code="DOWNLOAD_FAILED",
-            default_message="Videovorschau konnte nicht geladen werden.",
+            default_message="Video preview could not be loaded.",
             default_status=502,
         )
 
@@ -761,7 +763,7 @@ def download_video_mp4(
         raise map_exception(
             exc,
             default_code="DOWNLOAD_FAILED",
-            default_message="Video-Download fehlgeschlagen.",
+            default_message="Video download failed.",
             default_status=502,
         )
 
@@ -771,7 +773,7 @@ def download_video_mp4(
     if saved_path is None:
         raise BackendError(
             code="DOWNLOAD_FAILED",
-            message="Download abgeschlossen, aber Ausgabedatei konnte nicht gefunden werden.",
+            message="The download finished, but the output file could not be found.",
             http_status=500,
         )
 
@@ -795,7 +797,7 @@ def download_audio_mp3(
     if not ffmpeg_path:
         raise BackendError(
             code="FFMPEG_MISSING",
-            message="ffmpeg wurde nicht gefunden. MP3-Download benoetigt ffmpeg.",
+            message="ffmpeg was not found. MP3 downloads require ffmpeg.",
             http_status=400,
         )
 
@@ -826,7 +828,7 @@ def download_audio_mp3(
         raise map_exception(
             exc,
             default_code="DOWNLOAD_FAILED",
-            default_message="Audio-Download fehlgeschlagen.",
+            default_message="Audio download failed.",
             default_status=502,
         )
 
@@ -836,7 +838,7 @@ def download_audio_mp3(
     if saved_path is None:
         raise BackendError(
             code="DOWNLOAD_FAILED",
-            message="Download abgeschlossen, aber MP3-Datei konnte nicht gefunden werden.",
+            message="The download finished, but the MP3 file could not be found.",
             http_status=500,
         )
 
@@ -866,7 +868,7 @@ def download_transcript_txt(
         raise map_exception(
             exc,
             default_code="DOWNLOAD_FAILED",
-            default_message="Transcript-Download fehlgeschlagen.",
+            default_message="Transcript download failed.",
             default_status=502,
         )
 
@@ -895,7 +897,7 @@ def download_thumbnail(video_url: str, *, download_dir: Path | None = None) -> d
         raise map_exception(
             exc,
             default_code="DOWNLOAD_FAILED",
-            default_message="Thumbnail konnte nicht geladen werden.",
+            default_message="Thumbnail could not be loaded.",
             default_status=502,
         )
 
@@ -903,7 +905,7 @@ def download_thumbnail(video_url: str, *, download_dir: Path | None = None) -> d
     if not thumbnail_url:
         raise BackendError(
             code="THUMBNAIL_MISSING",
-            message="Kein Thumbnail fuer dieses Video gefunden.",
+            message="No thumbnail was found for this video.",
             http_status=404,
         )
 
@@ -925,7 +927,7 @@ def download_thumbnail(video_url: str, *, download_dir: Path | None = None) -> d
         raise map_exception(
             exc,
             default_code="DOWNLOAD_FAILED",
-            default_message="Thumbnail-Download fehlgeschlagen.",
+            default_message="Thumbnail download failed.",
             default_status=502,
         )
 

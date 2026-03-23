@@ -1,9 +1,9 @@
 ﻿<!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>YouTube Downloader UI</title>
+  <title>YouTube Toolkit</title>
   <style>
     :root {
       --bg: #0b1020;
@@ -775,20 +775,20 @@
           id="youtubeUrl"
           class="url-input"
           type="text"
-          placeholder="YouTube URL hier eingeben..."
+          placeholder="Paste a YouTube URL..."
           autocomplete="off"
         />
       </div>
 
       <label class="theme-switch" for="themeToggle">
-        <span>White mode</span>
-        <input id="themeToggle" type="checkbox" aria-label="Darkmode und White Mode umschalten" />
+        <span>Light mode</span>
+        <input id="themeToggle" type="checkbox" aria-label="Toggle light and dark mode" />
         <span>Dark mode</span>
       </label>
 
       <div id="statusPill" class="status-pill">
         <span class="status-dot"></span>
-        <span id="statusText">Warte auf gueltige YouTube-URL</span>
+        <span id="statusText">Waiting for a valid YouTube URL</span>
       </div>
     </header>
 
@@ -800,17 +800,17 @@
             <div class="thumbnail-overlay">
               <div>
                 <div class="play-badge">PLAY</div>
-                <h2 class="video-title">Noch kein Video geladen</h2>
+                <h2 class="video-title">No video loaded yet</h2>
                 <p class="video-subtitle">
-                  Gib oben einen YouTube-Link ein. Das Thumbnail wird automatisch geladen und hier gross angezeigt.
+                  Paste a YouTube link above. The thumbnail will load automatically and appear here.
                 </p>
               </div>
             </div>
           </div>
 
           <div class="video-meta">
-            <h3 id="videoTitle" class="video-title">Video noch nicht erkannt</h3>
-            <p id="videoHint" class="video-subtitle">Sobald eine gueltige URL erkannt wird, werden Titel, Thumbnail und Transcript geladen.</p>
+            <h3 id="videoTitle" class="video-title">No video detected yet</h3>
+            <p id="videoHint" class="video-subtitle">As soon as a valid URL is detected, the title, thumbnail, and transcript will load.</p>
           </div>
         </div>
 
@@ -872,13 +872,13 @@
 
         <div class="transcript-body">
           <div id="chaptersBox" class="chapters-box hidden">
-            <p class="chapters-title">Kapitel</p>
+            <p class="chapters-title">Chapters</p>
             <div id="chaptersList" class="chapters-list"></div>
           </div>
           <textarea
             id="transcriptBox"
             class="transcript-box"
-            placeholder="Hier erscheint das Transkript."
+            placeholder="The transcript will appear here."
           ></textarea>
         </div>
       </section>
@@ -1100,7 +1100,7 @@
 
         const title = document.createElement('span');
         title.className = 'chapter-title';
-        title.textContent = chapter.title || 'Kapitel';
+        title.textContent = chapter.title || 'Chapter';
 
         item.appendChild(time);
         item.appendChild(title);
@@ -1184,11 +1184,11 @@
       }
     }
 
-    function resetPreview(status = 'Warte auf gueltige YouTube-URL') {
+    function resetPreview(status = 'Waiting for a valid YouTube URL') {
       thumbnailWrap.classList.remove('loaded');
       thumbnailImage.removeAttribute('src');
-      videoTitle.textContent = 'Video noch nicht erkannt';
-      videoHint.textContent = 'Sobald eine gueltige URL erkannt wird, werden Titel, Thumbnail und Transcript geladen.';
+      videoTitle.textContent = 'No video detected yet';
+      videoHint.textContent = 'As soon as a valid URL is detected, the title, thumbnail, and transcript will load.';
       transcriptBox.value = '';
       renderChapters([]);
 
@@ -1276,17 +1276,17 @@
         if (state.transcriptAvailable) {
           transcriptBox.value = data.transcript;
           videoHint.textContent = data.language
-            ? `Transcript geladen (${data.language}).`
-            : 'Transcript geladen.';
-          applyStatus('Video erkannt - bereit zum Download', true);
+            ? `Transcript loaded (${data.language}).`
+            : 'Transcript loaded.';
+          applyStatus('Video detected - ready to download', true);
         } else {
           transcriptBox.value = '';
           if (data.transcript_error_message) {
-            videoHint.textContent = `Video erkannt. Transcript aktuell nicht verfuegbar: ${data.transcript_error_message}`;
-            applyStatus(`Video erkannt - ${data.transcript_error_message}`, true);
+            videoHint.textContent = `Video detected. Transcript currently unavailable: ${data.transcript_error_message}`;
+            applyStatus(`Video detected - ${data.transcript_error_message}`, true);
           } else {
-            videoHint.textContent = 'Video erkannt. Fuer dieses Video wurden keine passenden Untertitel gefunden.';
-            applyStatus('Video erkannt - kein Transcript verfuegbar', true);
+            videoHint.textContent = 'Video detected. No matching subtitles were found for this video.';
+            applyStatus('Video detected - no transcript available', true);
           }
         }
 
@@ -1294,7 +1294,7 @@
       } catch (error) {
         if (error.name === 'AbortError') return;
         if (requestId !== state.previewRequestId) return;
-        resetPreview(error.message || 'Vorschau konnte nicht geladen werden.');
+        resetPreview(error.message || 'Video preview could not be loaded.');
       }
     }
 
@@ -1318,7 +1318,7 @@
           state.isDownloading = false;
           stopProgressPolling();
           applyButtonStates();
-          applyStatus(data.message || 'Download fehlgeschlagen.', false);
+          applyStatus(data.message || 'Download failed.', false);
           return;
         }
 
@@ -1327,14 +1327,14 @@
         state.isDownloading = false;
         stopProgressPolling();
         applyButtonStates();
-        applyStatus(error.message || 'Progress konnte nicht geladen werden.', false);
+        applyStatus(error.message || 'Progress could not be loaded.', false);
       }
     }
 
     async function startDownload(kind) {
       const url = (youtubeUrl.value || '').trim();
       if (!extractVideoId(url)) {
-        resetPreview('Ungueltige YouTube-URL.');
+        resetPreview('Invalid YouTube URL.');
         return;
       }
 
@@ -1365,11 +1365,11 @@
           return;
         }
 
-        throw new ApiError('Unerwartete Antwort vom Backend.', 'DOWNLOAD_FAILED');
+        throw new ApiError('Unexpected response from the backend.', 'DOWNLOAD_FAILED');
       } catch (error) {
         state.isDownloading = false;
         applyButtonStates();
-        applyStatus(error.message || 'Download fehlgeschlagen.', false);
+        applyStatus(error.message || 'Download failed.', false);
         showProgress(false);
       }
     }
@@ -1377,12 +1377,12 @@
     async function downloadTranscriptFile() {
       const url = (youtubeUrl.value || '').trim();
       if (!extractVideoId(url)) {
-        resetPreview('Ungueltige YouTube-URL.');
+        resetPreview('Invalid YouTube URL.');
         return;
       }
 
       setButtonLoading(downloadTxtBtn, true, 'Saving transcript...');
-      applyStatus('Transcript wird gespeichert...', false);
+      applyStatus('Saving transcript...', false);
 
       try {
         const data = await apiPost('/download/transcript', {
@@ -1392,9 +1392,9 @@
         if (isRemoteClient) {
           await deliverFileToClient(data);
         }
-        applyStatus(`Transcript gespeichert: ${data.saved_to}`, true);
+        applyStatus(`Transcript saved: ${data.saved_to}`, true);
       } catch (error) {
-        applyStatus(error.message || 'Transcript-Download fehlgeschlagen.', false);
+        applyStatus(error.message || 'Transcript download failed.', false);
       } finally {
         setButtonLoading(downloadTxtBtn, false, '');
         applyButtonStates();
@@ -1403,27 +1403,27 @@
 
     async function chooseDownloadFolder() {
       setButtonLoading(selectFolderBtn, true, 'Selecting...');
-      applyStatus('Ordnerauswahl wird geoeffnet...', false);
+      applyStatus('Opening folder picker...', false);
       try {
         if (isRemoteClient) {
           if (!window.showDirectoryPicker) {
             throw new ApiError(
-              'Dieser Browser unterstuetzt keine direkte Ordnerwahl. Nutze den Browser-Downloadordner.',
+              'This browser does not support direct folder selection. Use the browser download folder instead.',
               'FOLDER_DIALOG_UNAVAILABLE'
             );
           }
           const dirHandle = await window.showDirectoryPicker();
           state.clientDownloadDirHandle = dirHandle;
           folderPath.textContent = `Download folder: Device folder (${dirHandle.name})`;
-          applyStatus(`Download folder gesetzt: ${dirHandle.name}`, true);
+          applyStatus(`Download folder set: ${dirHandle.name}`, true);
         } else {
           const data = await apiPost('/set-download-folder', { use_dialog: true });
           state.currentDownloadFolder = data.download_folder || '';
           folderPath.textContent = `Download folder: ${state.currentDownloadFolder || '-'}`;
-          applyStatus(`Download folder gesetzt: ${state.currentDownloadFolder}`, true);
+          applyStatus(`Download folder set: ${state.currentDownloadFolder}`, true);
         }
       } catch (error) {
-        applyStatus(error.message || 'Ordner konnte nicht gesetzt werden.', false);
+        applyStatus(error.message || 'The download folder could not be set.', false);
       } finally {
         setButtonLoading(selectFolderBtn, false, '');
         applyButtonStates();
@@ -1433,21 +1433,21 @@
     async function downloadThumbnailFile() {
       const url = (youtubeUrl.value || '').trim();
       if (!extractVideoId(url)) {
-        resetPreview('Ungueltige YouTube-URL.');
+        resetPreview('Invalid YouTube URL.');
         return;
       }
 
       setButtonLoading(downloadThumbBtn, true, 'Saving thumbnail...');
-      applyStatus('Thumbnail wird gespeichert...', false);
+      applyStatus('Saving thumbnail...', false);
 
       try {
         const data = await apiPost('/download/thumbnail', { url });
         if (isRemoteClient) {
           await deliverFileToClient(data);
         }
-        applyStatus(`Thumbnail gespeichert: ${data.saved_to}`, true);
+        applyStatus(`Thumbnail saved: ${data.saved_to}`, true);
       } catch (error) {
-        applyStatus(error.message || 'Thumbnail-Download fehlgeschlagen.', false);
+        applyStatus(error.message || 'Thumbnail download failed.', false);
       } finally {
         setButtonLoading(downloadThumbBtn, false, '');
         applyButtonStates();
@@ -1466,7 +1466,7 @@
         return;
       }
 
-      applyStatus('URL erkannt - pruefe Video...', false);
+      applyStatus('URL detected - checking video...', false);
       if (immediate) {
         loadPreview(rawUrl);
         return;
@@ -1497,7 +1497,7 @@
           copyTextBtn.textContent = 'Copy full text';
         }, 1200);
       } catch (_error) {
-        applyStatus('Kopieren fehlgeschlagen.', false);
+        applyStatus('Copying failed.', false);
       }
     });
 
@@ -1532,8 +1532,8 @@
       document.body.setAttribute('data-theme', themeToggle.checked ? 'dark' : 'light');
     });
 
-    document.body.setAttribute('data-theme', 'dark');
-    themeToggle.checked = true;
+    document.body.setAttribute('data-theme', 'light');
+    themeToggle.checked = false;
     qualitySelect.value = '1080p';
     state.selectedQuality = '1080p';
     includeTimestampsToggle.checked = false;

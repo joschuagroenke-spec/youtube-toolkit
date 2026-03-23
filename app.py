@@ -87,7 +87,7 @@ def _error_response(exc: Exception):
     mapped = map_exception(
         exc,
         default_code="DOWNLOAD_FAILED",
-        default_message="Interner Serverfehler.",
+        default_message="Internal server error.",
         default_status=500,
     )
     return jsonify(mapped.to_dict()), mapped.http_status
@@ -99,7 +99,7 @@ def _get_url_from_request() -> str:
     if not url:
         raise BackendError(
             code="INVALID_URL",
-            message="Bitte eine YouTube-URL eingeben.",
+            message="Please enter a YouTube URL.",
             http_status=400,
         )
     return url
@@ -257,7 +257,7 @@ def _run_video_job(job_id: str, url: str, quality: str, download_dir: Path, remo
         mapped = exc if isinstance(exc, BackendError) else map_exception(
             exc,
             default_code="DOWNLOAD_FAILED",
-            default_message="Video-Download fehlgeschlagen.",
+            default_message="Video download failed.",
             default_status=502,
         )
         _update_job(
@@ -296,7 +296,7 @@ def _run_audio_job(job_id: str, url: str, download_dir: Path, remote_client: boo
         mapped = exc if isinstance(exc, BackendError) else map_exception(
             exc,
             default_code="DOWNLOAD_FAILED",
-            default_message="Audio-Download fehlgeschlagen.",
+            default_message="Audio download failed.",
             default_status=502,
         )
         _update_job(
@@ -383,7 +383,7 @@ def download_progress():
             {
                 "ok": False,
                 "error_code": "MISSING_JOB_ID",
-                "message": "job_id fehlt.",
+                "message": "job_id is missing.",
             }
         ), 400
 
@@ -393,7 +393,7 @@ def download_progress():
             {
                 "ok": False,
                 "error_code": "JOB_NOT_FOUND",
-                "message": "Download-Job nicht gefunden.",
+                "message": "Download job not found.",
             }
         ), 404
 
@@ -439,12 +439,12 @@ def download_file(file_id: str):
     with _files_lock:
         entry = _files.get(file_id)
     if not entry:
-        return jsonify({"ok": False, "error_code": "FILE_NOT_FOUND", "message": "Datei nicht gefunden."}), 404
+        return jsonify({"ok": False, "error_code": "FILE_NOT_FOUND", "message": "File not found."}), 404
 
     file_path = entry.get("path")
     delete_after_download = bool(entry.get("delete_after_download"))
     if not file_path or not file_path.exists() or not file_path.is_file():
-        return jsonify({"ok": False, "error_code": "FILE_NOT_FOUND", "message": "Datei nicht gefunden."}), 404
+        return jsonify({"ok": False, "error_code": "FILE_NOT_FOUND", "message": "File not found."}), 404
 
     @after_this_request
     def cleanup_file(response):
