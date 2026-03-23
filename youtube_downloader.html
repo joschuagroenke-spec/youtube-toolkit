@@ -1,0 +1,1571 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>YouTube Downloader UI</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(17, 24, 39, 0.86);
+      --panel-2: rgba(15, 23, 42, 0.92);
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #eef2ff;
+      --muted: #94a3b8;
+      --accent: #ef4444;
+      --accent-2: #f97316;
+      --success: #22c55e;
+      --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+      --radius-xl: 24px;
+      --radius-lg: 18px;
+      --radius-md: 14px;
+      --transition: 180ms ease;
+    }
+
+    body[data-theme="light"] {
+      --bg: #f4f7fb;
+      --panel: rgba(255, 255, 255, 0.9);
+      --panel-2: rgba(248, 250, 252, 0.96);
+      --border: rgba(15, 23, 42, 0.09);
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #dc2626;
+      --accent-2: #f97316;
+      --success: #16a34a;
+      --shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(239, 68, 68, 0.16), transparent 26%),
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.16), transparent 24%),
+        linear-gradient(180deg, #060b17 0%, #0b1020 100%);
+      color: var(--text);
+      transition: background var(--transition), color var(--transition);
+    }
+
+    body[data-theme="light"] {
+      background:
+        radial-gradient(circle at top left, rgba(239, 68, 68, 0.1), transparent 24%),
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.08), transparent 24%),
+        linear-gradient(180deg, #eef3f9 0%, #f8fafc 100%);
+    }
+
+    body {
+      padding: 24px;
+    }
+
+    .app-shell {
+      min-height: calc(100vh - 48px);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 22px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 150px minmax(320px, 1fr) auto auto;
+      align-items: center;
+      gap: 18px;
+      padding: 18px 20px;
+      background: rgba(11, 16, 32, 0.72);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      transition: background var(--transition), border-color var(--transition);
+    }
+
+    body[data-theme="light"] .topbar {
+      background: rgba(255, 255, 255, 0.8);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 10px 24px rgba(239, 68, 68, 0.28);
+      font-size: 18px;
+      color: white;
+    }
+
+    .url-wrap {
+      position: relative;
+    }
+
+    .url-input {
+      width: 100%;
+      padding: 16px 18px 16px 52px;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      color: var(--text);
+      outline: none;
+      font-size: 15px;
+      transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition), background var(--transition), color var(--transition);
+    }
+
+    body[data-theme="light"] .url-input {
+      background: rgba(255, 255, 255, 0.88);
+      border-color: rgba(15, 23, 42, 0.08);
+    }
+
+    .url-input:focus {
+      border-color: rgba(248, 113, 113, 0.7);
+      box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12);
+    }
+
+    .url-icon {
+      position: absolute;
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    .theme-switch {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    body[data-theme="light"] .theme-switch {
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .theme-switch input {
+      appearance: none;
+      width: 52px;
+      height: 30px;
+      border-radius: 999px;
+      background: rgba(100, 116, 139, 0.45);
+      position: relative;
+      cursor: pointer;
+      outline: none;
+      transition: background var(--transition);
+    }
+
+    .theme-switch input::after {
+      content: "";
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      top: 4px;
+      left: 4px;
+      border-radius: 50%;
+      background: white;
+      transition: transform var(--transition);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    .theme-switch input:checked {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    }
+
+    .theme-switch input:checked::after {
+      transform: translateX(22px);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.88);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    body[data-theme="light"] .status-pill {
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #64748b;
+      transition: background var(--transition), box-shadow var(--transition);
+    }
+
+    .status-pill.ready .status-dot {
+      background: var(--success);
+      box-shadow: 0 0 18px rgba(34, 197, 94, 0.5);
+    }
+
+    .content-grid {
+      display: grid;
+      grid-template-columns: minmax(520px, 70%) minmax(260px, 30%);
+      gap: 22px;
+      min-height: 0;
+    }
+
+    .panel {
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.88) 0%, rgba(11, 18, 32, 0.92) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-height: 0;
+      transition: background var(--transition), border-color var(--transition), box-shadow var(--transition);
+    }
+
+    body[data-theme="light"] .panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.96) 100%);
+    }
+
+    .media-panel {
+      display: grid;
+      grid-template-rows: 1fr auto;
+    }
+
+    .thumbnail-frame {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 0;
+    }
+
+    .thumbnail-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 540px;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(239, 68, 68, 0.18), transparent 26%),
+        linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(17, 24, 39, 0.9));
+      display: grid;
+      place-items: center;
+    }
+
+    body[data-theme="light"] .thumbnail-wrap {
+      border-color: rgba(15, 23, 42, 0.08);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(239, 68, 68, 0.1), transparent 26%),
+        linear-gradient(135deg, rgba(241, 245, 249, 0.96), rgba(255, 255, 255, 0.98));
+    }
+
+    .thumbnail-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .thumbnail-wrap.loaded img {
+      display: block;
+    }
+
+    .thumbnail-overlay {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      text-align: center;
+      color: var(--muted);
+      background: linear-gradient(180deg, rgba(15, 23, 42, 0.14), rgba(15, 23, 42, 0.2));
+      transition: opacity var(--transition), visibility var(--transition);
+    }
+
+    .thumbnail-wrap.loaded .thumbnail-overlay {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .play-badge {
+      width: 88px;
+      height: 88px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: rgba(239, 68, 68, 0.16);
+      border: 1px solid rgba(239, 68, 68, 0.36);
+      margin: 0 auto 18px;
+      font-size: 30px;
+      backdrop-filter: blur(10px);
+    }
+
+    .video-meta {
+      display: grid;
+      gap: 8px;
+    }
+
+    .video-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--text);
+      margin: 0;
+    }
+
+    .video-subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+      line-height: 1.5;
+    }
+
+    .download-tools {
+      padding: 0 20px 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .settings-wrap {
+      position: relative;
+    }
+
+    .gear-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 23, 42, 0.85);
+      color: var(--text);
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      transition: transform var(--transition), border-color var(--transition), background var(--transition);
+    }
+
+    .gear-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(239, 68, 68, 0.55);
+    }
+
+    body[data-theme="light"] .gear-btn {
+      background: rgba(255, 255, 255, 0.92);
+      border-color: rgba(15, 23, 42, 0.1);
+    }
+
+    .settings-panel {
+      position: absolute;
+      top: 52px;
+      left: 0;
+      width: 190px;
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(11, 18, 32, 0.95);
+      backdrop-filter: blur(14px);
+      box-shadow: var(--shadow);
+      z-index: 40;
+      display: grid;
+      gap: 8px;
+    }
+
+    body[data-theme="light"] .settings-panel {
+      background: rgba(255, 255, 255, 0.98);
+    }
+
+    .settings-panel label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .settings-panel select {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.8);
+      color: var(--text);
+      padding: 10px;
+      font: inherit;
+      outline: none;
+    }
+
+    body[data-theme="light"] .settings-panel select {
+      background: rgba(255, 255, 255, 0.94);
+    }
+
+    .folder-btn {
+      padding: 12px 14px;
+      font-size: 14px;
+    }
+
+    .thumb-btn {
+      padding: 12px 14px;
+      font-size: 14px;
+      background: linear-gradient(135deg, #0f766e, #14b8a6);
+      box-shadow: 0 10px 22px rgba(20, 184, 166, 0.24);
+    }
+
+    .folder-path {
+      margin: 0;
+      padding: 0 20px 12px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      word-break: break-all;
+    }
+
+    .media-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      padding: 0 20px 12px;
+    }
+
+    .download-progress {
+      margin: 0 20px 20px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      background: rgba(15, 23, 42, 0.6);
+      display: grid;
+      gap: 8px;
+    }
+
+    body[data-theme="light"] .download-progress {
+      background: rgba(255, 255, 255, 0.76);
+      border-color: rgba(15, 23, 42, 0.1);
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.9rem;
+    }
+
+    .progress-track {
+      width: 100%;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.22);
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #ef4444, #f97316);
+      transition: width 200ms ease;
+    }
+
+    .progress-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+
+    .btn {
+      border: 0;
+      border-radius: 16px;
+      padding: 15px 18px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform var(--transition), box-shadow var(--transition), opacity var(--transition), background var(--transition), color var(--transition);
+      color: white;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), #dc2626);
+      box-shadow: 0 12px 30px rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.24);
+    }
+
+    .btn-ghost {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      box-shadow: none;
+    }
+
+    body[data-theme="light"] .btn-ghost {
+      background: rgba(15, 23, 42, 0.04);
+      border-color: rgba(15, 23, 42, 0.08);
+      color: var(--text);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .transcript-panel {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .transcript-header {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    body[data-theme="light"] .transcript-header {
+      border-bottom-color: rgba(15, 23, 42, 0.06);
+    }
+
+    .transcript-header-left {
+      display: grid;
+      gap: 6px;
+      min-width: 0;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #fca5a5;
+      font-weight: 700;
+    }
+
+    .transcript-title {
+      margin: 0;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .transcript-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .transcript-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .transcript-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 0.88rem;
+      user-select: none;
+    }
+
+    .transcript-controls input {
+      width: 17px;
+      height: 17px;
+      accent-color: #ef4444;
+      cursor: pointer;
+    }
+
+    .chapters-box {
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.48);
+      padding: 10px 12px;
+      max-height: 170px;
+      overflow-y: auto;
+    }
+
+    body[data-theme="light"] .chapters-box {
+      border-color: rgba(15, 23, 42, 0.1);
+      background: rgba(255, 255, 255, 0.78);
+    }
+
+    .chapters-title {
+      margin: 0 0 8px;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .chapters-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .chapter-item {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 10px;
+      align-items: start;
+      font-size: 0.9rem;
+    }
+
+    .chapter-time {
+      color: #fca5a5;
+      font-weight: 700;
+      min-width: 56px;
+    }
+
+    .chapter-title {
+      color: var(--text);
+      line-height: 1.35;
+    }
+
+    .transcript-body {
+      padding: 18px 20px 20px;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .transcript-box {
+      width: 100%;
+      height: auto;
+      flex: 1;
+      min-height: 0;
+      resize: none;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      background: rgba(15, 23, 42, 0.72);
+      color: var(--text);
+      padding: 18px;
+      outline: none;
+      font: inherit;
+      line-height: 1.72;
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(239, 68, 68, 0.55) rgba(255, 255, 255, 0.08);
+    }
+
+    body[data-theme="light"] .transcript-box {
+      background: rgba(255, 255, 255, 0.84);
+      border-color: rgba(15, 23, 42, 0.08);
+      scrollbar-color: rgba(220, 38, 38, 0.5) rgba(15, 23, 42, 0.08);
+    }
+
+    .transcript-box::-webkit-scrollbar {
+      width: 12px;
+    }
+
+    .transcript-box::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+    }
+
+    .transcript-box::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.8), rgba(249, 115, 22, 0.75));
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+
+    body[data-theme="light"] .transcript-box::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.06);
+    }
+
+    .transcript-box::placeholder {
+      color: #64748b;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1200px) {
+      .topbar {
+        grid-template-columns: 1fr;
+      }
+
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .status-pill,
+      .theme-switch {
+        justify-self: start;
+      }
+
+      .thumbnail-wrap {
+        min-height: 400px;
+      }
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 14px;
+      }
+
+      .app-shell {
+        min-height: calc(100vh - 28px);
+      }
+
+      .media-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .download-tools {
+        align-items: stretch;
+      }
+
+      .progress-meta {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge">YT</div>
+        <div>
+          <div>YouTube Toolkit</div>
+        </div>
+      </div>
+
+      <div class="url-wrap">
+        <span class="url-icon">URL</span>
+        <input
+          id="youtubeUrl"
+          class="url-input"
+          type="text"
+          placeholder="YouTube URL hier eingeben..."
+          autocomplete="off"
+        />
+      </div>
+
+      <label class="theme-switch" for="themeToggle">
+        <span>White mode</span>
+        <input id="themeToggle" type="checkbox" aria-label="Darkmode und White Mode umschalten" />
+        <span>Dark mode</span>
+      </label>
+
+      <div id="statusPill" class="status-pill">
+        <span class="status-dot"></span>
+        <span id="statusText">Warte auf gueltige YouTube-URL</span>
+      </div>
+    </header>
+
+    <main class="content-grid">
+      <section class="panel media-panel">
+        <div class="thumbnail-frame">
+          <div id="thumbnailWrap" class="thumbnail-wrap">
+            <img id="thumbnailImage" alt="YouTube Thumbnail" />
+            <div class="thumbnail-overlay">
+              <div>
+                <div class="play-badge">PLAY</div>
+                <h2 class="video-title">Noch kein Video geladen</h2>
+                <p class="video-subtitle">
+                  Gib oben einen YouTube-Link ein. Das Thumbnail wird automatisch geladen und hier gross angezeigt.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="video-meta">
+            <h3 id="videoTitle" class="video-title">Video noch nicht erkannt</h3>
+            <p id="videoHint" class="video-subtitle">Sobald eine gueltige URL erkannt wird, werden Titel, Thumbnail und Transcript geladen.</p>
+          </div>
+        </div>
+
+        <div class="download-tools">
+          <div class="settings-wrap">
+            <button id="settingsBtn" class="gear-btn" type="button" aria-label="Video settings">&#9881;</button>
+            <div id="settingsPanel" class="settings-panel hidden">
+              <label for="qualitySelect">Video quality</label>
+              <select id="qualitySelect">
+                <option value="best">Best</option>
+                <option value="1080p" selected>1080p</option>
+                <option value="720p">720p</option>
+                <option value="480p">480p</option>
+                <option value="360p">360p</option>
+              </select>
+            </div>
+          </div>
+          <button id="selectFolderBtn" class="btn btn-ghost folder-btn" type="button">Select download folder</button>
+          <button id="downloadThumbBtn" class="btn thumb-btn" type="button" disabled>Download Thumbnail</button>
+        </div>
+
+        <p id="folderPath" class="folder-path">Download folder: ...</p>
+
+        <div class="media-actions">
+          <button id="downloadVideoBtn" class="btn btn-primary" disabled>Download Video (.mp4)</button>
+          <button id="downloadAudioBtn" class="btn btn-secondary" disabled>Download only Audio (.mp3)</button>
+        </div>
+
+        <div id="downloadProgress" class="download-progress hidden">
+          <div class="progress-top">
+            <span id="downloadStatusLabel">Waiting...</span>
+            <span id="downloadPercentLabel">0 %</span>
+          </div>
+          <div class="progress-track">
+            <div id="downloadProgressFill" class="progress-fill"></div>
+          </div>
+          <div class="progress-meta">
+            <span id="downloadSpeedLabel">Speed: -</span>
+            <span id="downloadEtaLabel">ETA: --:--</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel transcript-panel">
+        <div class="transcript-header">
+          <div class="transcript-header-left">
+            <h2 class="transcript-title">TRANSKRIPT</h2>
+          </div>
+
+          <div class="transcript-actions">
+            <label class="transcript-controls" for="includeTimestampsToggle">
+              <input id="includeTimestampsToggle" type="checkbox" />
+              <span>Include timestamps</span>
+            </label>
+            <button id="copyTextBtn" class="btn btn-ghost" disabled>Copy full text</button>
+            <button id="downloadTxtBtn" class="btn btn-ghost" disabled>Download as .txt</button>
+          </div>
+        </div>
+
+        <div class="transcript-body">
+          <div id="chaptersBox" class="chapters-box hidden">
+            <p class="chapters-title">Kapitel</p>
+            <div id="chaptersList" class="chapters-list"></div>
+          </div>
+          <textarea
+            id="transcriptBox"
+            class="transcript-box"
+            placeholder="Hier erscheint das Transkript."
+          ></textarea>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const youtubeUrl = document.getElementById('youtubeUrl');
+    const thumbnailWrap = document.getElementById('thumbnailWrap');
+    const thumbnailImage = document.getElementById('thumbnailImage');
+    const videoTitle = document.getElementById('videoTitle');
+    const videoHint = document.getElementById('videoHint');
+    const transcriptBox = document.getElementById('transcriptBox');
+    const copyTextBtn = document.getElementById('copyTextBtn');
+    const downloadTxtBtn = document.getElementById('downloadTxtBtn');
+    const downloadVideoBtn = document.getElementById('downloadVideoBtn');
+    const downloadAudioBtn = document.getElementById('downloadAudioBtn');
+    const statusPill = document.getElementById('statusPill');
+    const statusText = document.getElementById('statusText');
+    const themeToggle = document.getElementById('themeToggle');
+
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const qualitySelect = document.getElementById('qualitySelect');
+    const selectFolderBtn = document.getElementById('selectFolderBtn');
+    const downloadThumbBtn = document.getElementById('downloadThumbBtn');
+    const folderPath = document.getElementById('folderPath');
+    const includeTimestampsToggle = document.getElementById('includeTimestampsToggle');
+    const chaptersBox = document.getElementById('chaptersBox');
+    const chaptersList = document.getElementById('chaptersList');
+
+    const downloadProgress = document.getElementById('downloadProgress');
+    const downloadStatusLabel = document.getElementById('downloadStatusLabel');
+    const downloadPercentLabel = document.getElementById('downloadPercentLabel');
+    const downloadProgressFill = document.getElementById('downloadProgressFill');
+    const downloadSpeedLabel = document.getElementById('downloadSpeedLabel');
+    const downloadEtaLabel = document.getElementById('downloadEtaLabel');
+
+    const state = {
+      currentUrl: '',
+      mediaReady: false,
+      transcriptAvailable: false,
+      includeTimestamps: false,
+      chapters: [],
+      selectedQuality: '1080p',
+      currentDownloadFolder: '',
+      clientDownloadDirHandle: null,
+      previewTimer: null,
+      previewRequestId: 0,
+      previewAbortController: null,
+      activeJobId: null,
+      progressPollTimer: null,
+      isDownloading: false
+    };
+
+    const isRemoteClient = !['127.0.0.1', 'localhost', '::1'].includes(window.location.hostname);
+
+    class ApiError extends Error {
+      constructor(message, code = 'DOWNLOAD_FAILED') {
+        super(message);
+        this.name = 'ApiError';
+        this.code = code;
+      }
+    }
+
+    const LEGACY_POST_ENDPOINTS = {
+      '/video-info': '/api/preview',
+      '/download/video': '/api/download/video',
+      '/download/audio': '/api/download/audio',
+      '/download/transcript': '/api/download/transcript',
+      '/download/thumbnail': '/api/download/thumbnail',
+      '/set-download-folder': '/api/set-download-folder'
+    };
+
+    function resolveLegacyGetEndpoint(endpoint) {
+      if (endpoint === '/download-folder') return '/api/download-folder';
+      if (endpoint.startsWith('/download/progress')) {
+        return endpoint.replace('/download/progress', '/api/download/progress');
+      }
+      return null;
+    }
+
+    function extractVideoId(value) {
+      if (!value) return null;
+      try {
+        const url = new URL(value.trim());
+        const host = (url.hostname || '').toLowerCase();
+
+        if (host === 'youtu.be') {
+          return url.pathname.replace('/', '').trim() || null;
+        }
+
+        if (host.endsWith('youtube.com')) {
+          if (url.searchParams.get('v')) return url.searchParams.get('v');
+          const parts = url.pathname.split('/').filter(Boolean);
+          if (parts.length >= 2 && (parts[0] === 'embed' || parts[0] === 'shorts')) {
+            return parts[1];
+          }
+        }
+      } catch (_error) {
+        return null;
+      }
+      return null;
+    }
+
+    function applyStatus(text, ready = false) {
+      statusText.textContent = text || '';
+      statusPill.classList.toggle('ready', Boolean(ready));
+    }
+
+    function applyButtonStates() {
+      const mediaEnabled = state.mediaReady && !state.isDownloading;
+      const transcriptEnabled = state.transcriptAvailable && !state.isDownloading;
+
+      downloadVideoBtn.disabled = !mediaEnabled;
+      downloadAudioBtn.disabled = !mediaEnabled;
+      downloadThumbBtn.disabled = !mediaEnabled;
+      copyTextBtn.disabled = !transcriptEnabled;
+      downloadTxtBtn.disabled = !transcriptEnabled;
+
+      settingsBtn.disabled = !mediaEnabled;
+      qualitySelect.disabled = !mediaEnabled;
+      selectFolderBtn.disabled = state.isDownloading;
+      includeTimestampsToggle.disabled = !mediaEnabled;
+    }
+
+    async function deliverFileToClient(meta) {
+      const downloadUrl = meta && meta.download_url;
+      if (!downloadUrl) return false;
+
+      const fileName = (meta && meta.file_name) || 'download.bin';
+
+      if (isRemoteClient && state.clientDownloadDirHandle && window.showDirectoryPicker) {
+        try {
+          const response = await fetch(downloadUrl);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const blob = await response.blob();
+          const fileHandle = await state.clientDownloadDirHandle.getFileHandle(fileName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          return true;
+        } catch (_error) {
+          // Fallback auf Browser-Download.
+        }
+      }
+
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return true;
+    }
+
+    function setButtonLoading(button, loading, loadingLabel) {
+      if (!button) return;
+      if (loading) {
+        if (!button.dataset.originalText) {
+          button.dataset.originalText = button.textContent;
+        }
+        button.textContent = loadingLabel;
+        button.disabled = true;
+        return;
+      }
+      if (button.dataset.originalText) {
+        button.textContent = button.dataset.originalText;
+      }
+    }
+
+    function showProgress(show) {
+      downloadProgress.classList.toggle('hidden', !show);
+    }
+
+    function updateProgressUI(job) {
+      const percent = Number(job.progress_percent || 0);
+      const clamped = Math.max(0, Math.min(100, percent));
+      const speed = Number(job.speed || 0);
+      const eta = Number(job.eta);
+
+      downloadStatusLabel.textContent = job.message || 'Downloading...';
+      downloadPercentLabel.textContent = `${Math.round(clamped)} %`;
+      downloadProgressFill.style.width = `${clamped}%`;
+
+      if (speed > 0) {
+        const mb = speed / (1024 * 1024);
+        downloadSpeedLabel.textContent = `Speed: ${mb.toFixed(1)} MB/s`;
+      } else {
+        downloadSpeedLabel.textContent = 'Speed: -';
+      }
+
+      if (Number.isFinite(eta) && eta >= 0) {
+        const minutes = Math.floor(eta / 60).toString().padStart(2, '0');
+        const seconds = Math.floor(eta % 60).toString().padStart(2, '0');
+        downloadEtaLabel.textContent = `ETA: ${minutes}:${seconds}`;
+      } else {
+        downloadEtaLabel.textContent = 'ETA: --:--';
+      }
+    }
+
+    function renderChapters(chapters) {
+      const normalized = Array.isArray(chapters) ? chapters : [];
+      state.chapters = normalized;
+      chaptersList.innerHTML = '';
+
+      if (!normalized.length) {
+        chaptersBox.classList.add('hidden');
+        return;
+      }
+
+      for (const chapter of normalized) {
+        const item = document.createElement('div');
+        item.className = 'chapter-item';
+
+        const time = document.createElement('span');
+        time.className = 'chapter-time';
+        time.textContent = chapter.time_label || '00:00';
+
+        const title = document.createElement('span');
+        title.className = 'chapter-title';
+        title.textContent = chapter.title || 'Kapitel';
+
+        item.appendChild(time);
+        item.appendChild(title);
+        chaptersList.appendChild(item);
+      }
+
+      chaptersBox.classList.remove('hidden');
+    }
+
+    function stopProgressPolling() {
+      if (state.progressPollTimer) {
+        clearTimeout(state.progressPollTimer);
+        state.progressPollTimer = null;
+      }
+      state.activeJobId = null;
+    }
+
+    async function apiPostOnce(endpoint, payload, signal) {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload || {}),
+        signal
+      });
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (_error) {
+        data = null;
+      }
+
+      if (!response.ok || !data || data.ok === false) {
+        const message = (data && data.message) || `HTTP ${response.status}`;
+        const code = (data && data.error_code) || `HTTP_${response.status}`;
+        throw new ApiError(message, code);
+      }
+
+      return data;
+    }
+
+    async function apiPost(endpoint, payload, signal) {
+      try {
+        return await apiPostOnce(endpoint, payload, signal);
+      } catch (error) {
+        const fallback = LEGACY_POST_ENDPOINTS[endpoint];
+        if (fallback && error instanceof ApiError && error.code === 'HTTP_404') {
+          return apiPostOnce(fallback, payload, signal);
+        }
+        throw error;
+      }
+    }
+
+    async function apiGetOnce(endpoint) {
+      const response = await fetch(endpoint, { method: 'GET' });
+      let data = null;
+      try {
+        data = await response.json();
+      } catch (_error) {
+        data = null;
+      }
+
+      if (!response.ok || !data || data.ok === false) {
+        const message = (data && data.message) || `HTTP ${response.status}`;
+        const code = (data && data.error_code) || `HTTP_${response.status}`;
+        throw new ApiError(message, code);
+      }
+
+      return data;
+    }
+
+    async function apiGet(endpoint) {
+      try {
+        return await apiGetOnce(endpoint);
+      } catch (error) {
+        const fallback = resolveLegacyGetEndpoint(endpoint);
+        if (fallback && error instanceof ApiError && error.code === 'HTTP_404') {
+          return apiGetOnce(fallback);
+        }
+        throw error;
+      }
+    }
+
+    function resetPreview(status = 'Warte auf gueltige YouTube-URL') {
+      thumbnailWrap.classList.remove('loaded');
+      thumbnailImage.removeAttribute('src');
+      videoTitle.textContent = 'Video noch nicht erkannt';
+      videoHint.textContent = 'Sobald eine gueltige URL erkannt wird, werden Titel, Thumbnail und Transcript geladen.';
+      transcriptBox.value = '';
+      renderChapters([]);
+
+      state.currentUrl = '';
+      state.mediaReady = false;
+      state.transcriptAvailable = false;
+      state.isDownloading = false;
+
+      stopProgressPolling();
+      showProgress(false);
+      applyButtonStates();
+      applyStatus(status, false);
+    }
+
+    function setThumbnail(url, fallbackVideoId) {
+      if (!url && !fallbackVideoId) {
+        thumbnailWrap.classList.remove('loaded');
+        thumbnailImage.removeAttribute('src');
+        return;
+      }
+
+      const candidates = [];
+      if (url) candidates.push(url);
+      if (fallbackVideoId) {
+        candidates.push(`https://i.ytimg.com/vi/${fallbackVideoId}/maxresdefault.jpg`);
+        candidates.push(`https://i.ytimg.com/vi/${fallbackVideoId}/hqdefault.jpg`);
+      }
+
+      let index = 0;
+      thumbnailImage.onerror = () => {
+        index += 1;
+        if (index < candidates.length) {
+          thumbnailImage.src = candidates[index];
+        }
+      };
+      thumbnailImage.onload = () => {
+        thumbnailWrap.classList.add('loaded');
+      };
+      thumbnailImage.src = candidates[index];
+    }
+
+    async function loadDownloadFolder() {
+      try {
+        if (isRemoteClient) {
+          folderPath.textContent = 'Download folder: Device default (browser)';
+          return;
+        }
+
+        const data = await apiGet('/download-folder');
+        state.currentDownloadFolder = data.download_folder || '';
+        folderPath.textContent = `Download folder: ${state.currentDownloadFolder || '-'}`;
+      } catch (error) {
+        folderPath.textContent = 'Download folder: -';
+      }
+    }
+
+    async function loadPreview(rawUrl) {
+      const requestId = ++state.previewRequestId;
+      if (state.previewAbortController) {
+        state.previewAbortController.abort();
+      }
+      state.previewAbortController = new AbortController();
+
+      state.mediaReady = false;
+      state.transcriptAvailable = false;
+      applyButtonStates();
+      applyStatus('Lade Video-Infos...', false);
+
+      try {
+        const data = await apiPost(
+          '/video-info',
+          { url: rawUrl, include_timestamps: state.includeTimestamps },
+          state.previewAbortController.signal
+        );
+        if (requestId !== state.previewRequestId) return;
+
+        state.currentUrl = rawUrl;
+        state.mediaReady = true;
+        state.transcriptAvailable = Boolean(data.transcript_available && data.transcript);
+        renderChapters(data.chapters || []);
+
+        videoTitle.textContent = data.title || 'YouTube Video';
+        setThumbnail(data.thumbnail_url, data.video_id || extractVideoId(rawUrl));
+
+        if (state.transcriptAvailable) {
+          transcriptBox.value = data.transcript;
+          videoHint.textContent = data.language
+            ? `Transcript geladen (${data.language}).`
+            : 'Transcript geladen.';
+          applyStatus('Video erkannt - bereit zum Download', true);
+        } else {
+          transcriptBox.value = '';
+          if (data.transcript_error_message) {
+            videoHint.textContent = `Video erkannt. Transcript aktuell nicht verfuegbar: ${data.transcript_error_message}`;
+            applyStatus(`Video erkannt - ${data.transcript_error_message}`, true);
+          } else {
+            videoHint.textContent = 'Video erkannt. Fuer dieses Video wurden keine passenden Untertitel gefunden.';
+            applyStatus('Video erkannt - kein Transcript verfuegbar', true);
+          }
+        }
+
+        applyButtonStates();
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        if (requestId !== state.previewRequestId) return;
+        resetPreview(error.message || 'Vorschau konnte nicht geladen werden.');
+      }
+    }
+
+    async function pollDownloadProgress(jobId) {
+      try {
+        const data = await apiGet(`/download/progress?job_id=${encodeURIComponent(jobId)}`);
+        updateProgressUI(data);
+
+        if (data.status === 'finished') {
+          state.isDownloading = false;
+          stopProgressPolling();
+          applyButtonStates();
+          if (isRemoteClient) {
+            await deliverFileToClient(data);
+          }
+          applyStatus(`Download finished. ${data.saved_to || ''}`.trim(), true);
+          return;
+        }
+
+        if (data.status === 'error') {
+          state.isDownloading = false;
+          stopProgressPolling();
+          applyButtonStates();
+          applyStatus(data.message || 'Download fehlgeschlagen.', false);
+          return;
+        }
+
+        state.progressPollTimer = setTimeout(() => pollDownloadProgress(jobId), 700);
+      } catch (error) {
+        state.isDownloading = false;
+        stopProgressPolling();
+        applyButtonStates();
+        applyStatus(error.message || 'Progress konnte nicht geladen werden.', false);
+      }
+    }
+
+    async function startDownload(kind) {
+      const url = (youtubeUrl.value || '').trim();
+      if (!extractVideoId(url)) {
+        resetPreview('Ungueltige YouTube-URL.');
+        return;
+      }
+
+      state.isDownloading = true;
+      applyButtonStates();
+      showProgress(true);
+      updateProgressUI({ message: `Downloading ${kind}...`, progress_percent: 0, speed: null, eta: null });
+      applyStatus(`Downloading ${kind}...`, false);
+
+      try {
+        const endpoint = kind === 'video' ? '/download/video' : '/download/audio';
+        const payload = kind === 'video'
+          ? { url, quality: state.selectedQuality }
+          : { url };
+
+        const data = await apiPost(endpoint, payload);
+        if (data.job_id) {
+          state.activeJobId = data.job_id;
+          pollDownloadProgress(data.job_id);
+          return;
+        }
+
+        if (data.saved_to) {
+          updateProgressUI({ message: 'Download finished.', progress_percent: 100, speed: null, eta: 0 });
+          state.isDownloading = false;
+          applyButtonStates();
+          applyStatus(`Download finished. ${data.saved_to}`, true);
+          return;
+        }
+
+        throw new ApiError('Unerwartete Antwort vom Backend.', 'DOWNLOAD_FAILED');
+      } catch (error) {
+        state.isDownloading = false;
+        applyButtonStates();
+        applyStatus(error.message || 'Download fehlgeschlagen.', false);
+        showProgress(false);
+      }
+    }
+
+    async function downloadTranscriptFile() {
+      const url = (youtubeUrl.value || '').trim();
+      if (!extractVideoId(url)) {
+        resetPreview('Ungueltige YouTube-URL.');
+        return;
+      }
+
+      setButtonLoading(downloadTxtBtn, true, 'Saving transcript...');
+      applyStatus('Transcript wird gespeichert...', false);
+
+      try {
+        const data = await apiPost('/download/transcript', {
+          url,
+          include_timestamps: state.includeTimestamps
+        });
+        if (isRemoteClient) {
+          await deliverFileToClient(data);
+        }
+        applyStatus(`Transcript gespeichert: ${data.saved_to}`, true);
+      } catch (error) {
+        applyStatus(error.message || 'Transcript-Download fehlgeschlagen.', false);
+      } finally {
+        setButtonLoading(downloadTxtBtn, false, '');
+        applyButtonStates();
+      }
+    }
+
+    async function chooseDownloadFolder() {
+      setButtonLoading(selectFolderBtn, true, 'Selecting...');
+      applyStatus('Ordnerauswahl wird geoeffnet...', false);
+      try {
+        if (isRemoteClient) {
+          if (!window.showDirectoryPicker) {
+            throw new ApiError(
+              'Dieser Browser unterstuetzt keine direkte Ordnerwahl. Nutze den Browser-Downloadordner.',
+              'FOLDER_DIALOG_UNAVAILABLE'
+            );
+          }
+          const dirHandle = await window.showDirectoryPicker();
+          state.clientDownloadDirHandle = dirHandle;
+          folderPath.textContent = `Download folder: Device folder (${dirHandle.name})`;
+          applyStatus(`Download folder gesetzt: ${dirHandle.name}`, true);
+        } else {
+          const data = await apiPost('/set-download-folder', { use_dialog: true });
+          state.currentDownloadFolder = data.download_folder || '';
+          folderPath.textContent = `Download folder: ${state.currentDownloadFolder || '-'}`;
+          applyStatus(`Download folder gesetzt: ${state.currentDownloadFolder}`, true);
+        }
+      } catch (error) {
+        applyStatus(error.message || 'Ordner konnte nicht gesetzt werden.', false);
+      } finally {
+        setButtonLoading(selectFolderBtn, false, '');
+        applyButtonStates();
+      }
+    }
+
+    async function downloadThumbnailFile() {
+      const url = (youtubeUrl.value || '').trim();
+      if (!extractVideoId(url)) {
+        resetPreview('Ungueltige YouTube-URL.');
+        return;
+      }
+
+      setButtonLoading(downloadThumbBtn, true, 'Saving thumbnail...');
+      applyStatus('Thumbnail wird gespeichert...', false);
+
+      try {
+        const data = await apiPost('/download/thumbnail', { url });
+        if (isRemoteClient) {
+          await deliverFileToClient(data);
+        }
+        applyStatus(`Thumbnail gespeichert: ${data.saved_to}`, true);
+      } catch (error) {
+        applyStatus(error.message || 'Thumbnail-Download fehlgeschlagen.', false);
+      } finally {
+        setButtonLoading(downloadThumbBtn, false, '');
+        applyButtonStates();
+      }
+    }
+
+    function triggerPreviewFromInput(immediate = false) {
+      const rawUrl = (youtubeUrl.value || '').trim();
+      const videoId = extractVideoId(rawUrl);
+
+      if (state.previewTimer) clearTimeout(state.previewTimer);
+      if (state.previewAbortController) state.previewAbortController.abort();
+
+      if (!videoId) {
+        resetPreview();
+        return;
+      }
+
+      applyStatus('URL erkannt - pruefe Video...', false);
+      if (immediate) {
+        loadPreview(rawUrl);
+        return;
+      }
+
+      state.previewTimer = setTimeout(() => {
+        loadPreview(rawUrl);
+      }, 420);
+    }
+
+    youtubeUrl.addEventListener('input', () => triggerPreviewFromInput(false));
+    youtubeUrl.addEventListener('change', () => triggerPreviewFromInput(true));
+    youtubeUrl.addEventListener('paste', () => {
+      setTimeout(() => triggerPreviewFromInput(true), 20);
+    });
+    youtubeUrl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        triggerPreviewFromInput(true);
+      }
+    });
+
+    copyTextBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(transcriptBox.value || '');
+        copyTextBtn.textContent = 'Copied';
+        setTimeout(() => {
+          copyTextBtn.textContent = 'Copy full text';
+        }, 1200);
+      } catch (_error) {
+        applyStatus('Kopieren fehlgeschlagen.', false);
+      }
+    });
+
+    downloadVideoBtn.addEventListener('click', () => startDownload('video'));
+    downloadAudioBtn.addEventListener('click', () => startDownload('audio'));
+    downloadTxtBtn.addEventListener('click', () => downloadTranscriptFile());
+    selectFolderBtn.addEventListener('click', () => chooseDownloadFolder());
+    downloadThumbBtn.addEventListener('click', () => downloadThumbnailFile());
+
+    settingsBtn.addEventListener('click', () => {
+      settingsPanel.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!settingsPanel.contains(event.target) && !settingsBtn.contains(event.target)) {
+        settingsPanel.classList.add('hidden');
+      }
+    });
+
+    qualitySelect.addEventListener('change', () => {
+      state.selectedQuality = qualitySelect.value || '1080p';
+    });
+
+    includeTimestampsToggle.addEventListener('change', () => {
+      state.includeTimestamps = Boolean(includeTimestampsToggle.checked);
+      if (state.currentUrl) {
+        loadPreview(state.currentUrl);
+      }
+    });
+
+    themeToggle.addEventListener('change', () => {
+      document.body.setAttribute('data-theme', themeToggle.checked ? 'dark' : 'light');
+    });
+
+    document.body.setAttribute('data-theme', 'dark');
+    themeToggle.checked = true;
+    qualitySelect.value = '1080p';
+    state.selectedQuality = '1080p';
+    includeTimestampsToggle.checked = false;
+    state.includeTimestamps = false;
+    if (isRemoteClient) {
+      selectFolderBtn.textContent = 'Select device folder';
+    }
+    resetPreview();
+    loadDownloadFolder();
+
+    window.youtubeDownloaderUI = {
+      setTranscript(text) {
+        transcriptBox.value = text || '';
+        state.transcriptAvailable = Boolean((text || '').trim());
+        applyButtonStates();
+      },
+      setVideoMeta(meta = {}) {
+        if (meta.title) videoTitle.textContent = meta.title;
+        if (meta.subtitle) videoHint.textContent = meta.subtitle;
+        setThumbnail(meta.thumbnailUrl || null, meta.videoId || null);
+      },
+      setStatus(text, ready = false) {
+        applyStatus(text, ready);
+      },
+      setTheme(theme = 'dark') {
+        const normalized = theme === 'light' ? 'light' : 'dark';
+        document.body.setAttribute('data-theme', normalized);
+        themeToggle.checked = normalized === 'dark';
+      }
+    };
+  </script>
+</body>
+</html>
+
+
