@@ -1,6 +1,7 @@
 # YouTube Toolkit
 
 A small Flask app for downloading YouTube videos, MP3 audio, thumbnails, and transcripts through a local web interface.
+<img width="1915" height="999" alt="image" src="https://github.com/user-attachments/assets/6fa62435-3d90-4a3f-b84b-594974054c7a" />
 
 ## Features
 
